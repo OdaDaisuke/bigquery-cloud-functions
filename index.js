@@ -12,7 +12,7 @@ exports.sendEvent2BQ = (req, res) => {
     auth(req, res)
     let eventType = req.body.type || ""
     if(eventType.length == 0) {
-        res.status(500).send("データタイプが設定されていません。")
+        res.status(400).send("データタイプが設定されていません。")
     }
 
     const bq = require('gcloud')({ projectId: process.env.BQ_PROJECT_ID }).bigquery()
@@ -26,7 +26,7 @@ exports.sendEvent2BQ = (req, res) => {
     })
 
     if(!ds) {
-        res.status(500).send(`データタイプ'${eventType}'は不正です。`)
+        res.status(400).send(`データタイプ'${eventType}'は不正です。`)
     }
 
     const targetTable = ds.table(TableUtil.getCurrentMonthTableName(eventType))
@@ -151,7 +151,7 @@ class TableOperator {
         const tableScheme = this.getScheme(eventType)
         const tableName = TableUtil.getCurrentMonthTableName(eventType)
         if(!tableScheme) {
-            res.status(200).send(`Table scheme was not found by name: ${eventType}`)
+            res.status(500).send(`Table scheme was not found by name: ${eventType}`)
             return
         }
         ds.createTable(tableName, tableScheme, (err, table, apiResponse) => {
@@ -160,9 +160,10 @@ class TableOperator {
                 console.log('apiResponse: ', apiResponse)
                 res.status(500).send("TABLE CREATION FAILED:" + JSON.stringify(err))
                 return
+            } else {
+                console.log("table created")
+                cb()
             }
-            console.log("table created")
-            cb()
         })
     }
 
@@ -189,8 +190,9 @@ class TableOperator {
                 console.log('insertErr: ', insertErrors)
                 console.log('apiResponse: ', JSON.stringify(apiResponse))
                 res.status(500).send("FAILED:" + JSON.stringify(err) + JSON.stringify(insertErrors))
+            } else {
+                res.status(200).send(JSON.stringify(apiResponse))
             }
-            res.status(200).send("SUCCEED:" + JSON.stringify(apiResponse))
         })
     }
 
