@@ -12,7 +12,8 @@ exports.sendEvent2BQ = (req, res) => {
     auth(req, res)
     let eventType = req.body.type || ""
     if(eventType.length == 0) {
-        res.status(400).send("データタイプが設定されていません。")
+        res.status = 400
+        res.end("データタイプが設定されていません。")
     }
 
     const bq = require('gcloud')({ projectId: process.env.BQ_PROJECT_ID }).bigquery()
@@ -26,7 +27,8 @@ exports.sendEvent2BQ = (req, res) => {
     })
 
     if(!ds) {
-        res.status(400).send(`データタイプ'${eventType}'は不正です。`)
+        res.status = 400
+        res.end(`データタイプ'${eventType}'は不正です。`)
     }
 
     const targetTable = ds.table(TableUtil.getCurrentMonthTableName(eventType))
@@ -49,7 +51,8 @@ const auth = (req, res) => {
     //「Authorization: Bearer 文字列」みたいな感じのヘッダーが設定されているのが正しいので
     // デコードしてそのままトークンと比較するのは本当は正しくないので注意。
     if(decodeBase64(authorization) != process.env.AUTH_TOKEN) {
-        res.status(401).send('invalid auth token.')
+        res.status = 401
+        res.end('invalid auth token.')
     }
 }
 
@@ -151,14 +154,16 @@ class TableOperator {
         const tableScheme = this.getScheme(eventType)
         const tableName = TableUtil.getCurrentMonthTableName(eventType)
         if(!tableScheme) {
-            res.status(500).send(`Table scheme was not found by name: ${eventType}`)
+            res.status = 500
+            res.end(`Table scheme was not found by name: ${eventType}`)
             return
         }
         ds.createTable(tableName, tableScheme, (err, table, apiResponse) => {
             if ( err ) {
                 console.log('err: ', err)
                 console.log('apiResponse: ', apiResponse)
-                res.status(500).send("TABLE CREATION FAILED:" + JSON.stringify(err))
+                res.status = 500
+                res.end("TABLE CREATION FAILED:" + JSON.stringify(err))
                 return
             } else {
                 console.log("table created")
@@ -189,9 +194,11 @@ class TableOperator {
                 console.log('err: ', err)
                 console.log('insertErr: ', insertErrors)
                 console.log('apiResponse: ', JSON.stringify(apiResponse))
-                res.status(500).send("FAILED:" + JSON.stringify(err) + JSON.stringify(insertErrors))
+                res.status = 500
+                res.end("FAILED:" + JSON.stringify(err) + JSON.stringify(insertErrors))
             } else {
-                res.status(200).send(JSON.stringify(apiResponse))
+                res.status = 200
+                res.end(JSON.stringify(apiResponse))
             }
         })
     }
